@@ -10,7 +10,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,12 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.saniyogreat.gamebooster.ui.theme.MyAppTheme
 
-// Colors matching the Replit design
 private val Background = Color(0xFF0B0E14)
 private val CardBg = Color(0xFF151A24)
 private val CardBgLight = Color(0xFF1C2230)
-private val Accent = Color(0xFFC6FF00)          // Neon lime green
-private val AccentDark = Color(0xFF9ACC00)
+private val Accent = Color(0xFFC6FF00)
 private val TextPrimary = Color(0xFFF0F2F5)
 private val TextSecondary = Color(0xFF8B93A7)
 private val TextMuted = Color(0xFF5C6578)
@@ -62,28 +59,45 @@ fun GameboostApp() {
     Scaffold(
         containerColor = Background,
         bottomBar = {
-            BottomNavBar(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it }
-            )
+            NavigationBar(containerColor = CardBg) {
+                val items = listOf("Home", "Library", "Boost", "Perf", "Settings")
+                val icons = listOf(
+                    Icons.Outlined.Home to Icons.Filled.Home,
+                    Icons.Outlined.List to Icons.Filled.List,
+                    Icons.Outlined.Bolt to Icons.Filled.Bolt,
+                    Icons.Outlined.Speed to Icons.Filled.Speed,
+                    Icons.Outlined.Settings to Icons.Filled.Settings
+                )
+
+                items.forEachIndexed { index, label ->
+                    NavigationBarItem(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        icon = {
+                            Icon(
+                                imageVector = if (selectedTab == index) icons[index].second else icons[index].first,
+                                contentDescription = label
+                            )
+                        },
+                        label = { Text(label, fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Accent,
+                            selectedTextColor = Accent,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary,
+                            indicatorColor = Accent.copy(alpha = 0.15f)
+                        )
+                    )
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    Toast.makeText(context, "⚡ Boost started!", Toast.LENGTH_SHORT).show()
-                },
+                onClick = { Toast.makeText(context, "⚡ Boost started!", Toast.LENGTH_SHORT).show() },
                 containerColor = Accent,
-                contentColor = Color.Black,
-                shape = RoundedCornerShape(50)
+                contentColor = Color.Black
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("BOOST", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
+                Icon(Icons.Default.Bolt, contentDescription = "Boost")
             }
         }
     ) { padding ->
@@ -104,61 +118,42 @@ fun GameboostApp() {
     }
 }
 
-// ==================== BOTTOM NAV ====================
 @Composable
-fun BottomNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    val items = listOf(
-        NavItem("Home", Icons.Outlined.Home, Icons.Filled.Home),
-        NavItem("Game library", Icons.Outlined.SportsEsports, Icons.Filled.SportsEsports),
-        NavItem("Boost flow", Icons.Outlined.Bolt, Icons.Filled.Bolt),
-        NavItem("Performance", Icons.Outlined.Speed, Icons.Filled.Speed),
-        NavItem("Settings", Icons.Outlined.Settings, Icons.Filled.Settings)
-    )
-
-    NavigationBar(
-        containerColor = CardBg,
-        contentColor = TextPrimary
+fun TopBar() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        items.forEachIndexed { index, item ->
-            NavigationBarItem(
-                selected = selectedTab == index,
-                onClick = { onTabSelected(index) },
-                icon = {
-                    Icon(
-                        imageVector = if (selectedTab == index) item.selectedIcon else item.icon,
-                        contentDescription = item.label
-                    )
-                },
-                label = { Text(item.label, fontSize = 10.sp) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Accent,
-                    selectedTextColor = Accent,
-                    unselectedIconColor = TextSecondary,
-                    unselectedTextColor = TextSecondary,
-                    indicatorColor = Accent.copy(alpha = 0.15f)
-                )
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Accent),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Bolt, null, tint = Color.Black, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(10.dp))
+            Text("GAME", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text("BOOST", color = Accent, fontWeight = FontWeight.Bold, fontSize = 20.sp)
         }
+        Icon(Icons.Default.Menu, null, tint = TextSecondary)
     }
 }
 
-data class NavItem(val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
-
-// ==================== HOME SCREEN ====================
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-
-    // Real system values
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     val memoryInfo = ActivityManager.MemoryInfo()
     activityManager.getMemoryInfo(memoryInfo)
+
     val totalRam = memoryInfo.totalMem / (1024.0 * 1024 * 1024)
     val availableRam = memoryInfo.availMem / (1024.0 * 1024 * 1024)
-
     val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
     val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-
     val freeStorage = Environment.getDataDirectory().freeSpace / (1024.0 * 1024 * 1024)
     val totalStorage = Environment.getDataDirectory().totalSpace / (1024.0 * 1024 * 1024)
 
@@ -168,41 +163,13 @@ fun HomeScreen() {
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        // Top bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Accent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Bolt, null, tint = Color.Black, modifier = Modifier.size(22.dp))
-                }
-                Spacer(Modifier.width(10.dp))
-                Text("GAME", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text("BOOST", color = Accent, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            }
-            Icon(Icons.Default.Menu, null, tint = TextSecondary)
-        }
-
+        TopBar()
         Spacer(Modifier.height(28.dp))
-
         Text("OVERVIEW / 01", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Ready when you are.", color = TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Text(
-            "Your fast lane to a cleaner session. Pick a profile, hit boost, get in.",
-            color = TextSecondary,
-            fontSize = 14.sp
-        )
-
+        Text("Your fast lane to a cleaner session.", color = TextSecondary, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
 
         Button(
@@ -218,75 +185,32 @@ fun HomeScreen() {
 
         Spacer(Modifier.height(24.dp))
 
-        // Stats grid
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Memory,
-                value = String.format("%.1f GB", availableRam),
-                label = "RAM AVAILABLE",
-                sub = String.format("of %.1f GB", totalRam)
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Storage,
-                value = String.format("%.0f GB", freeStorage),
-                label = "STORAGE FREE",
-                sub = String.format("of %.0f GB", totalStorage)
-            )
+            StatCard(Modifier.weight(1f), Icons.Default.Memory, String.format("%.1f GB", availableRam), "RAM AVAILABLE", String.format("of %.1f GB", totalRam))
+            StatCard(Modifier.weight(1f), Icons.Default.Storage, String.format("%.0f GB", freeStorage), "STORAGE FREE", String.format("of %.0f GB", totalStorage))
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.BatteryFull,
-                value = "$battery%",
-                label = "BATTERY",
-                sub = "device reading"
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.SportsEsports,
-                value = "00",
-                label = "GAME PROFILES",
-                sub = "ready to boost",
-                highlight = true
-            )
+            StatCard(Modifier.weight(1f), Icons.Default.BatteryFull, "$battery%", "BATTERY", "device reading")
+            StatCard(Modifier.weight(1f), Icons.Default.Star, "00", "GAME PROFILES", "ready to boost", true)
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // Hero card
         Card(
             colors = CardDefaults.cardColors(containerColor = CardBgLight),
             shape = RoundedCornerShape(18.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(20.dp)) {
-                Surface(
-                    color = Accent.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        "SYSTEM PRIMED",
-                        color = Accent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
+                Text("SYSTEM PRIMED", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 Text("One tap.", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Text("Better match.", color = Accent, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Simulate your full boost routine before your next ranked queue.",
-                    color = TextSecondary,
-                    fontSize = 13.sp
-                )
+                Text("Simulate your full boost routine before your next ranked queue.", color = TextSecondary, fontSize = 13.sp)
             }
         }
-
         Spacer(Modifier.height(80.dp))
     }
 }
@@ -313,23 +237,16 @@ fun StatCard(
                     .background(if (highlight) Accent else CardBgLight),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    icon,
-                    null,
-                    tint = if (highlight) Color.Black else Accent,
-                    modifier = Modifier.size(18.dp)
-                )
+                Icon(icon, null, tint = if (highlight) Color.Black else Accent, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.height(12.dp))
             Text(value, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(2.dp))
             Text(label, color = TextSecondary, fontSize = 11.sp)
             Text(sub, color = TextMuted, fontSize = 11.sp)
         }
     }
 }
 
-// ==================== GAME LIBRARY ====================
 @Composable
 fun GameLibraryScreen() {
     val context = LocalContext.current
@@ -345,8 +262,7 @@ fun GameLibraryScreen() {
         Spacer(Modifier.height(8.dp))
         Text("Your game loadout.", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Text("0 profiles tuned and ready. Each game gets its own competitive baseline.", color = TextSecondary, fontSize = 14.sp)
-
+        Text("0 profiles tuned and ready.", color = TextSecondary, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
 
         Button(
@@ -359,48 +275,10 @@ fun GameLibraryScreen() {
             Spacer(Modifier.width(8.dp))
             Text("ADD GAME", fontWeight = FontWeight.Bold)
         }
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            placeholder = { Text("Search games...", color = TextMuted) },
-            leadingIcon = { Icon(Icons.Default.Search, null, tint = TextMuted) },
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = CardBgLight,
-                focusedBorderColor = Accent,
-                unfocusedContainerColor = CardBg,
-                focusedContainerColor = CardBg
-            ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(24.dp))
-        Text("0 / 0 PROFILES", color = TextMuted, fontSize = 12.sp)
-
-        Spacer(Modifier.height(12.dp))
-        Card(
-            colors = CardDefaults.cardColors(containerColor = CardBg),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("No profiles match that search.", color = TextPrimary, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(6.dp))
-                Text("Try a different title or add a new loadout.", color = TextSecondary, fontSize = 13.sp)
-            }
-        }
-
         Spacer(Modifier.height(80.dp))
     }
 }
 
-// ==================== BOOST FLOW ====================
 @Composable
 fun BoostFlowScreen() {
     val context = LocalContext.current
@@ -415,9 +293,6 @@ fun BoostFlowScreen() {
         Text("BOOST FLOW / 03", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Clear the runway.", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Text("A six-step pre-match sweep for your selected profile.", color = TextSecondary, fontSize = 14.sp)
-
         Spacer(Modifier.height(20.dp))
 
         Button(
@@ -430,63 +305,10 @@ fun BoostFlowScreen() {
             Spacer(Modifier.width(8.dp))
             Text("BOOST NOW", fontWeight = FontWeight.Bold)
         }
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = { Toast.makeText(context, "Boost & Play coming soon", Toast.LENGTH_SHORT).show() },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
-        ) {
-            Icon(Icons.Default.PlayArrow, null)
-            Spacer(Modifier.width(8.dp))
-            Text("BOOST & PLAY", fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Text("Boost sequence", color = TextPrimary, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
-
-        val steps = listOf(
-            "Scanning device" to "Reading available device signals",
-            "Checking background apps" to "Identifying memory pressure",
-            "Loading game profile" to "Applying maximum preset",
-            "Checking performance mode" to "Verifying device headroom",
-            "Preparing game" to "Building a clean launch state",
-            "Launching game" to "Ready when Native Android is connected"
-        )
-
-        steps.forEachIndexed { index, (title, desc) ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(CardBgLight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("${index + 1}", color = TextSecondary, fontSize = 12.sp)
-                }
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(title, color = TextPrimary, fontWeight = FontWeight.Medium)
-                    Text(desc, color = TextMuted, fontSize = 12.sp)
-                }
-            }
-        }
-
         Spacer(Modifier.height(80.dp))
     }
 }
 
-// ==================== PERFORMANCE ====================
 @Composable
 fun PerformanceScreen() {
     Column(
@@ -500,31 +322,98 @@ fun PerformanceScreen() {
         Text("TELEMETRY / 04", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Watch the signal.", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Text("Live performance surface for your device.", color = TextSecondary, fontSize = 14.sp)
-
         Spacer(Modifier.height(20.dp))
 
-        // Fake graph placeholder
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MiniStat(Modifier.weight(1f), "59", "FPS", Accent)
+            MiniStat(Modifier.weight(1f), "16.9", "FRAME", Color(0xFF4FC3F7))
+            MiniStat(Modifier.weight(1f), "42°", "THERMAL", Color(0xFFFFB74D))
+        }
+        Spacer(Modifier.height(80.dp))
+    }
+}
+
+@Composable
+fun MiniStat(modifier: Modifier, value: String, label: String, color: Color) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = CardBg),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(value, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = TextMuted, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen() {
+    var autoBoost by remember { mutableStateOf(false) }
+    var haptics by remember { mutableStateOf(true) }
+    var notifications by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
+    ) {
+        TopBar()
+        Spacer(Modifier.height(24.dp))
+        Text("SYSTEM / 05", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text("Set your defaults.", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(24.dp))
+
         Card(
             colors = CardDefaults.cardColors(containerColor = CardBg),
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().height(140.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("LIVE GRAPH (coming soon)", color = TextMuted)
+            Column(Modifier.padding(16.dp)) {
+                SettingsToggle("Auto-boost", "Prepare a boost when you open the app", autoBoost) { autoBoost = it }
+                SettingsToggle("Haptics", "Tactile feedback", haptics) { haptics = it }
+                SettingsToggle("Notifications", "Show session updates", notifications) { notifications = it }
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MiniStat(Modifier.weight(1f), "59", "FPS", Accent)
-            MiniStat(Modifier.weight(1f), "16.9", "FRAME TIME", Color(0xFF4FC3F7))
-            MiniStat(Modifier.weight(1f), "42°", "THERMAL", Color(0xFFFFB74D))
+        Button(
+            onClick = { Toast.makeText(context, "Data reset", Toast.LENGTH_SHORT).show() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3D1515), contentColor = Color(0xFFFF6B6B)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("RESET ALL DATA")
         }
+        Spacer(Modifier.height(80.dp))
+    }
+}
 
-        Spacer(Modifier.height(20.dp))
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor
+@Composable
+fun SettingsToggle(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, fontWeight = FontWeight.Medium)
+            Text(subtitle, color = TextMuted, fontSize = 12.sp)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.Black,
+                checkedTrackColor = Accent,
+                uncheckedThumbColor = TextSecondary,
+                uncheckedTrackColor = CardBgLight
+            )
+        )
+    }
+}
